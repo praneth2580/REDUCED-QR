@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { huffmanDecode, huffmanEncode } from '../encoders/huffman.encoders';
+import { huffmanEncode } from '../encoders/huffman.encoders';
 import { ComparisonTable } from '../components/ComparisonTable';
 import { CopyButton } from '../components/CopyButton';
 import { dictionaryGroupEncode } from '../encoders/dictionary.group.encoders';

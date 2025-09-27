@@ -3,9 +3,16 @@ import './App.css';
 import { routesConfig } from './routes';
 import { Navigation } from './components/Navigation';
 import Home from './Home';
+import type { ReactNode } from 'react';
 
-const renderRoutes = (routes) => {
-  return routes.map((route) => {
+interface RouteConfig {
+  path: string;
+  element?: ReactNode;
+  children?: RouteConfig[];
+}
+
+const renderRoutes = (routes: RouteConfig[]) => {
+  return routes.map((route: RouteConfig) => {
     const { path, element, children } = route;
     if (children) {
       return (
