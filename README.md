@@ -1,3 +1,5 @@
+![Banner](public/banner.svg)
+
 # RQR
 
 This project is a demonstration of various data compression algorithms, implemented in React and TypeScript.
