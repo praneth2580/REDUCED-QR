@@ -1,4 +1,6 @@
-export function dictionaryGroupEncode(text: string, groupSize: number): { encoded: string; dictionary: string[] } {
+import type { Encoded } from "./normalizer";
+
+export function dictionaryGroupEncode(text: string, groupSize: number): Encoded {
   if (groupSize <= 0) {
     return { encoded: '', dictionary: [] };
   }

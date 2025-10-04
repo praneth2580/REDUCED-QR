@@ -14,3 +14,78 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+/* --- START HUFFMAN TREE STYLES --- */
+.tree {
+  white-space: nowrap;
+  overflow-x: auto; /* More specific */
+  overflow-y: hidden; /* Avoid vertical scrollbars */
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.tree ul {
+  padding-top: 20px;
+  position: relative;
+  display: inline-table; /* Using table layout */
+  border-spacing: 0;
+  border-collapse: collapse;
+}
+
+.tree li {
+  display: table-cell; /* Using table layout */
+  text-align: center;
+  list-style-type: none;
+  position: relative;
+  padding: 20px 2px 0 2px; /* Reduced horizontal padding */
+  vertical-align: top;
+}
+
+/* Connectors */
+.tree li::before, .tree li::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 50%;
+  border-top: 2px solid #63b3ed; /* Thicker, colored line */
+  width: 50%;
+  height: 20px;
+}
+
+.tree li::after {
+  right: auto;
+  left: 50%;
+  border-left: 2px solid #63b3ed;
+}
+
+.tree li:only-child::after, .tree li:only-child::before {
+  display: none;
+}
+
+.tree li:only-child {
+  padding-top: 0;
+}
+
+.tree li:first-child::before, .tree li:last-child::after {
+  border: 0 none;
+}
+
+.tree li:last-child::before {
+  border-right: 2px solid #63b3ed;
+  border-radius: 0 5px 0 0;
+}
+
+.tree li:first-child::after {
+  border-radius: 5px 0 0 0;
+}
+
+.tree ul ul::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  border-left: 2px solid #63b3ed;
+  width: 0;
+  height: 20px;
+}
+/* --- END HUFFMAN TREE STYLES --- */

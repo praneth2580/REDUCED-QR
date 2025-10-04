@@ -1,17 +1,19 @@
-export function rleEncode(text: string): string {
-  if (!text) return '';
-  let encoded = '';
+import type { Encoded } from "./normalizer";
+
+export function rleEncode(text: string): Encoded {
+  if (!text) return { encoded: '' };
+  let encodedStr = '';
   let count = 1;
 
   for (let i = 0; i < text.length; i++) {
     if (text[i] === text[i + 1]) {
       count++;
     } else {
-      encoded += count + text[i];
+      encodedStr += count + text[i];
       count = 1;
     }
   }
-  return encoded;
+  return { encoded: encodedStr };
 }
 
 export function rleDecode(encoded: string): string {

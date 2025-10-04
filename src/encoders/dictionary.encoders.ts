@@ -1,4 +1,6 @@
-export function dictionaryEncode(text: string): { encoded: string; dictionary: string[] } {
+import type { Encoded } from "./normalizer";
+
+export function dictionaryEncode(text: string): Encoded {
   const words = text.split(/(\s+)/);
   const uniqueWords = Array.from(new Set(words));
   const dictionary = uniqueWords;

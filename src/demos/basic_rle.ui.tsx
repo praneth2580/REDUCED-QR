@@ -10,7 +10,7 @@ function BasicRLEDemoUI() {
 
   const handleEncode = () => {
     if (!input) return;
-    const encodedText = rleEncode(input);
+    const {encoded: encodedText} = rleEncode(input);
     setEncoded(encodedText);
     setDecoded(rleDecode(encodedText));
   };

@@ -1,29 +1,25 @@
 import { useState } from 'react';
-import { compactCodes, decompactCodes, huffmanDecode, huffmanEncode, Node } from '../encoders/huffman.encoders';
+import { huffmanWordEncode, huffmanWordDecode } from '../encoders/huffman.word.encoders';
 import { ComparisonTable } from '../components/ComparisonTable';
 import { CopyButton } from '../components/CopyButton';
-import { Button } from '../components/Button';
 import { Modal } from '../components/Modal';
-import HuffmanNode from '../components/HuffmanNode';
 
-function HuffmanDemoUI() {
+function AllInOneDemoUI() {
   const [input, setInput] = useState<string>('');
   const [encoded, setEncoded] = useState<string>('');
   const [decoded, setDecoded] = useState<string>('');
-  const [showTreeModal, setShowTreeModal] = useState<boolean>(false);
   const [codes, setCodes] = useState<Record<string, string>>({});
-  const [tree, setTree] = useState<Node>({});
+  const [modalOpen, setModalOpen] = useState(true);
+  const encoders = {
+    huffman: huffmanWordEncode,
+  }
 
   const handleEncode = () => {
     if (!input) return;
-    const { encoded, codes, tree, freq } = huffmanEncode(input);
-    const str_code = compactCodes(freq);
-    setTree(tree);
+    const { encoded, codes } = huffmanWordEncode(input);
+    setEncoded(encoded);
     setCodes(codes);
-    setEncoded(str_code + "|" + encoded);
-
-    const decoded_codes = decompactCodes(str_code);
-    setDecoded(huffmanDecode(encoded, decoded_codes));
+    setDecoded(huffmanWordDecode(encoded, codes));
   };
 
   const handleClear = () => {
@@ -35,16 +31,9 @@ function HuffmanDemoUI() {
 
   return (
     <div className='min-h-screen bg-gray-100 flex items-center justify-center p-4 text-black'>
-      <Modal isOpen={showTreeModal} onClose={() => setShowTreeModal(false)}>
-        <div className="tree">
-          <ul>
-            <HuffmanNode node={tree} />
-          </ul>
-        </div>
-      </Modal>
       <div className='w-full max-w-4xl bg-white rounded-lg shadow-lg p-6'>
         <h1 className='text-3xl font-bold text-center text-gray-800 mb-6'>
-          Huffman Compression Demo
+          Huffman Word Compression Demo
         </h1>
 
         <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
@@ -80,8 +69,7 @@ function HuffmanDemoUI() {
             <div>
               <div className="flex items-center justify-between">
                 <h2 className='text-xl font-semibold text-gray-700 mb-2'>Encoded (Compressed)</h2>
-                {encoded && <CopyButton textToCopy={encoded} /> }
-                {encoded && <Button onClick={() => setShowTreeModal(true)} text="Show Tree" />}
+                {encoded && <CopyButton textToCopy={encoded} />}
               </div>
               <div className='bg-gray-50 p-3 rounded-md border border-gray-200 min-h-[6rem]'>
                 <p className='text-gray-800 break-all'>{encoded || '...'}</p>
@@ -108,14 +96,14 @@ function HuffmanDemoUI() {
               <table className='min-w-full bg-white border border-gray-200'>
                 <thead>
                   <tr className='bg-gray-100'>
-                    <th className='py-2 px-4 border-b'>Character</th>
+                    <th className='py-2 px-4 border-b'>Word</th>
                     <th className='py-2 px-4 border-b'>Code</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {Object.entries(codes).map(([char, code]) => (
-                    <tr key={char} className='text-center'>
-                      <td className='py-2 px-4 border-b'>'{char}'</td>
+                  {Object.entries(codes).map(([word, code]) => (
+                    <tr key={word} className='text-center'>
+                      <td className='py-2 px-4 border-b'>'{word}'</td>
                       <td className='py-2 px-4 border-b font-mono'>{code}</td>
                     </tr>
                   ))}
@@ -125,7 +113,11 @@ function HuffmanDemoUI() {
           </div>
         )}
       </div>
+      {/* <Modal isOpen={modalOpen} onClose={handleClear}> 
+
+      </Modal> */}
     </div>
   );
 }
-export default HuffmanDemoUI;
+
+export default AllInOneDemoUI;
