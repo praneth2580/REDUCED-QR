@@ -11,8 +11,8 @@ function HuffmanDemoUI() {
   const [encoded, setEncoded] = useState<string>('');
   const [decoded, setDecoded] = useState<string>('');
   const [showTreeModal, setShowTreeModal] = useState<boolean>(false);
-  const [codes, setCodes] = useState<Record<string, string>>({});
-  const [tree, setTree] = useState<Node>({});
+  const [codes, setCodes] = useState<Record<string, string> | undefined>({});
+  const [tree, setTree] = useState<Node>();
 
   const handleEncode = () => {
     if (!input) return;
@@ -38,7 +38,7 @@ function HuffmanDemoUI() {
       <Modal isOpen={showTreeModal} onClose={() => setShowTreeModal(false)}>
         <div className="tree">
           <ul>
-            <HuffmanNode node={tree} />
+            {tree && <HuffmanNode node={tree} />}
           </ul>
         </div>
       </Modal>
@@ -101,7 +101,7 @@ function HuffmanDemoUI() {
         {encoded && <ComparisonTable originalText={input} encodedText={encoded} />}
 
         {/* Huffman Codes Table */}
-        {Object.keys(codes).length > 0 && (
+        {codes && Object.keys(codes).length > 0 && (
           <div className='mt-6'>
             <h2 className='text-xl font-semibold text-gray-700 mb-2'>Huffman Codes</h2>
             <div className='overflow-x-auto'>
@@ -113,7 +113,7 @@ function HuffmanDemoUI() {
                   </tr>
                 </thead>
                 <tbody>
-                  {Object.entries(codes).map(([char, code]) => (
+                  {codes && Object.entries(codes).map(([char, code]) => (
                     <tr key={char} className='text-center'>
                       <td className='py-2 px-4 border-b'>'{char}'</td>
                       <td className='py-2 px-4 border-b font-mono'>{code}</td>

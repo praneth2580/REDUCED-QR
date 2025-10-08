@@ -1,0 +1,9 @@
+{
+  "1": {
+    "encoder": ["huffman-char"],
+    "gridSize": [21, 33, 41, 57, 73, 97, 129],
+    "bitSize": 6,
+    "colorProfile": "rgb",
+    "calibrationMarkers": true
+  }
+}

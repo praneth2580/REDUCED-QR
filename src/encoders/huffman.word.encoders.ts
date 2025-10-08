@@ -1,3 +1,6 @@
+import type { Encoded } from './normalizer';
+import { orderByFrequency, US } from './utils';
+
 // Node class
 class Node {
   value: string | null;
@@ -19,11 +22,21 @@ class Node {
 }
 
 // Build Huffman Tree
-function buildHuffmanTree(text: string): Node {
+function buildHuffmanTree(text: string, _freq?: Record<string, number>): Node {
   const words = text.split(/(\s+)/);
-  const freq: Record<string, number> = {};
-  for (let word of words) {
-    freq[word] = (freq[word] || 0) + 1;
+  let freq: Record<string, number> = {};
+
+  if (!_freq) {
+    for (let word of words) {
+      freq[word] = (freq[word] || 0) + 1;
+    }
+    freq = orderByFrequency(freq).reduce(
+      (acc, [word, freq]) => {
+        acc[word] = freq;
+        return acc;
+      },
+      {} as Record<string, number>
+    );
   }
 
   let nodes: Node[] = Object.entries(freq).map(([value, f]) => new Node(value, f));
@@ -53,10 +66,7 @@ function generateCodes(
   return map;
 }
 
-export function huffmanWordEncode(text: string): {
-  encoded: string;
-  codes: Record<string, string>;
-} {
+export function huffmanWordEncode(text: string): Encoded {
   const tree = buildHuffmanTree(text);
   const codes = generateCodes(tree);
   const words = text.split(/(\s+)/);
@@ -64,9 +74,9 @@ export function huffmanWordEncode(text: string): {
   return { encoded, codes };
 }
 
-export function huffmanWordDecode(encoded: string, codes: Record<string, string>): string {
+export function huffmanWordDecode(encoded: string, codes: Record<string, string> | undefined): string {
   const reverseMap: Record<string, string> = {};
-  for (const [value, code] of Object.entries(codes)) {
+  for (const [value, code] of Object.entries(codes || {})) {
     reverseMap[code] = value;
   }
 
@@ -81,4 +91,64 @@ export function huffmanWordDecode(encoded: string, codes: Record<string, string>
     }
   }
   return decoded;
+}
+
+/**
+ * Compacts Huffman codes for single characters into a string.
+ * Format: charCode1:length1,charCode2:length2,...
+ * @param freq The record of characters againsts there frequencies
+ * @returns A compact string representation.
+ */
+export function compactCodes(freq?: Record<string, string>): string {
+  if (!freq) return '';
+  const ordered_freq = orderByFrequency(freq);
+  const freq_wise_char_str: Record<number, string[]> = {};
+  for (const [word, freq] of ordered_freq) {
+    if (!freq_wise_char_str[freq]) {
+      freq_wise_char_str[freq] = [word];
+    } else {
+      freq_wise_char_str[freq].push(word);
+    }
+  }
+  return Object.entries(freq_wise_char_str)
+    .map((value) => {
+      return `${value[0]}:${value[1].join(US)}`;
+    })
+    .join(US);
+}
+
+/**
+ * Decompacts a string of character codes and lengths into a Huffman codes object.
+ * @param compactString The compact string.
+ * @returns The Huffman codes object for characters.
+ */
+export function decompactCodes(compactString: string): Record<string, string> {
+  let codes: Record<string, string> = {};
+  if (!compactString) {
+    return codes;
+  }
+
+  const codes_characters = compactString.split(US);
+  if (codes_characters.length === 0) {
+    return codes;
+  }
+
+  let current_freq = 1;
+  const freq: Record<string, number> = {};
+  for (const codes_word of codes_characters) {
+    let word;
+    if (codes_word.includes(':')) {
+      const [_freq, _word] = codes_word.split(':');
+      current_freq = parseInt(_freq);
+      word = _word;
+    } else {
+      word = codes_word;
+    }
+    freq[word] = current_freq;
+  }
+
+  const tree = buildHuffmanTree('', freq);
+  codes = generateCodes(tree);
+
+  return codes;
 }

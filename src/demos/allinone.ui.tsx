@@ -2,17 +2,19 @@ import { useState } from 'react';
 import { huffmanWordEncode, huffmanWordDecode } from '../encoders/huffman.word.encoders';
 import { ComparisonTable } from '../components/ComparisonTable';
 import { CopyButton } from '../components/CopyButton';
-import { Modal } from '../components/Modal';
 
 function AllInOneDemoUI() {
+
+  if (!import.meta.env.DEV) return <h4 className='text-xl font-semibold text-white mb-2 text-center mt-10'>Still under development...</h4>;
+
   const [input, setInput] = useState<string>('');
   const [encoded, setEncoded] = useState<string>('');
   const [decoded, setDecoded] = useState<string>('');
-  const [codes, setCodes] = useState<Record<string, string>>({});
-  const [modalOpen, setModalOpen] = useState(true);
-  const encoders = {
-    huffman: huffmanWordEncode,
-  }
+  const [codes, setCodes] = useState<Record<string, string> | undefined>({});
+  // const [modalOpen, setModalOpen] = useState(true);
+  // const encoders = {
+  //   huffman: huffmanWordEncode,
+  // }
 
   const handleEncode = () => {
     if (!input) return;
@@ -89,7 +91,7 @@ function AllInOneDemoUI() {
         {encoded && <ComparisonTable originalText={input} encodedText={encoded} />}
 
         {/* Huffman Codes Table */}
-        {Object.keys(codes).length > 0 && (
+        {codes && Object.keys(codes).length > 0 && (
           <div className='mt-6'>
             <h2 className='text-xl font-semibold text-gray-700 mb-2'>Huffman Codes</h2>
             <div className='overflow-x-auto'>
@@ -101,7 +103,7 @@ function AllInOneDemoUI() {
                   </tr>
                 </thead>
                 <tbody>
-                  {Object.entries(codes).map(([word, code]) => (
+                  {codes && Object.entries(codes).map(([word, code]) => (
                     <tr key={word} className='text-center'>
                       <td className='py-2 px-4 border-b'>'{word}'</td>
                       <td className='py-2 px-4 border-b font-mono'>{code}</td>

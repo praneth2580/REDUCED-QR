@@ -8,8 +8,8 @@ function HuffmanDictionaryDemoUI() {
   const [input, setInput] = useState<string>('');
   const [encoded, setEncoded] = useState<string>('');
   const [decoded, setDecoded] = useState<string>('');
-  const [codes, setCodes] = useState<Record<string, string>>({});
-  const [dictionary, setDictionary] = useState<string[]>([]);
+  const [codes, setCodes] = useState<Record<string, string> | undefined>({});
+  const [dictionary, setDictionary] = useState<string[] | undefined>([]);
   const [groupSize, setGroupSize] = useState<number>(3);
 
   const handleEncode = () => {
@@ -103,7 +103,7 @@ function HuffmanDictionaryDemoUI() {
         {encoded && <ComparisonTable originalText={input} encodedText={encoded} />}
 
         {/* Huffman Codes Table */}
-        {Object.keys(codes).length > 0 && (
+        {codes ?Object.keys(codes).length > 0 && (
           <div className='mt-6'>
             <h2 className='text-xl font-semibold text-gray-700 mb-2'>Huffman Codes</h2>
             <div className='overflow-x-auto'>
@@ -125,8 +125,8 @@ function HuffmanDictionaryDemoUI() {
               </table>
             </div>
           </div>
-        )}
-        {dictionary.length > 0 && (
+        ) : <></>}
+        {dictionary && dictionary.length > 0 && (
           <div className='mt-6'>
             <h2 className='text-xl font-semibold text-gray-700 mb-2'>Dictionary</h2>
             <div className='overflow-x-auto'>
@@ -138,7 +138,7 @@ function HuffmanDictionaryDemoUI() {
                   </tr>
                 </thead>
                 <tbody>
-                  {dictionary.map((group, index) => (
+                  {dictionary && dictionary.map((group, index) => (
                     <tr key={index} className='text-center'>
                       <td className='py-2 px-4 border-b'>{index}</td>
                       <td className='py-2 px-4 border-b'>'{group}'</td>

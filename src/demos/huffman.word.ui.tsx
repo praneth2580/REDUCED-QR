@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { huffmanWordEncode, huffmanWordDecode } from '../encoders/huffman.word.encoders';
+import { huffmanWordEncode, huffmanWordDecode, compactCodes, decompactCodes } from '../encoders/huffman.word.encoders';
 import { ComparisonTable } from '../components/ComparisonTable';
 import { CopyButton } from '../components/CopyButton';
 
@@ -7,14 +7,17 @@ function HuffmanWordDemoUI() {
   const [input, setInput] = useState<string>('');
   const [encoded, setEncoded] = useState<string>('');
   const [decoded, setDecoded] = useState<string>('');
-  const [codes, setCodes] = useState<Record<string, string>>({});
+  const [codes, setCodes] = useState<Record<string, string> | undefined>({});
 
   const handleEncode = () => {
     if (!input) return;
     const { encoded, codes } = huffmanWordEncode(input);
-    setEncoded(encoded);
+    const str_code = compactCodes(codes);
+    setEncoded(str_code + "|" + encoded);
     setCodes(codes);
-    setDecoded(huffmanWordDecode(encoded, codes));
+    
+    const decrypt_code = decompactCodes(str_code);
+    setDecoded(huffmanWordDecode(encoded, decrypt_code));
   };
 
   const handleClear = () => {
@@ -84,7 +87,7 @@ function HuffmanWordDemoUI() {
         {encoded && <ComparisonTable originalText={input} encodedText={encoded} />}
 
         {/* Huffman Codes Table */}
-        {Object.keys(codes).length > 0 && (
+        {codes && Object.keys(codes).length > 0 && (
           <div className='mt-6'>
             <h2 className='text-xl font-semibold text-gray-700 mb-2'>Huffman Codes</h2>
             <div className='overflow-x-auto'>
@@ -96,7 +99,7 @@ function HuffmanWordDemoUI() {
                   </tr>
                 </thead>
                 <tbody>
-                  {Object.entries(codes).map(([word, code]) => (
+                  {codes && Object.entries(codes).map(([word, code]) => (
                     <tr key={word} className='text-center'>
                       <td className='py-2 px-4 border-b'>'{word}'</td>
                       <td className='py-2 px-4 border-b font-mono'>{code}</td>

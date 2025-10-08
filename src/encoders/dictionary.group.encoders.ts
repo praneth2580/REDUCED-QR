@@ -16,7 +16,8 @@ export function dictionaryGroupEncode(text: string, groupSize: number): Encoded 
   return { encoded, dictionary };
 }
 
-export function dictionaryGroupDecode(encoded: string, dictionary: string[]): string {
+export function dictionaryGroupDecode(encoded: string, dictionary: string[] | undefined): string {
+  if (!dictionary) return '';
   const codes = encoded.split(' ').map(Number);
   const decoded = codes.map(code => dictionary[code]).join('');
   return decoded;

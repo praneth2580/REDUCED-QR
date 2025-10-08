@@ -7,7 +7,7 @@ function DictionaryDemoUI() {
   const [input, setInput] = useState<string>('');
   const [encoded, setEncoded] = useState<string>('');
   const [decoded, setDecoded] = useState<string>('');
-  const [dictionary, setDictionary] = useState<string[]>([]);
+  const [dictionary, setDictionary] = useState<string[] | undefined>([]);
 
   const handleEncode = () => {
     if (!input) return;
@@ -82,7 +82,7 @@ function DictionaryDemoUI() {
         </div>
         {encoded && <ComparisonTable originalText={input} encodedText={encoded} />}
 
-        {dictionary.length > 0 && (
+        {dictionary && dictionary.length > 0 && (
           <div className='mt-6'>
             <h2 className='text-xl font-semibold text-gray-700 mb-2'>Dictionary</h2>
             <div className='overflow-x-auto'>
@@ -94,7 +94,7 @@ function DictionaryDemoUI() {
                   </tr>
                 </thead>
                 <tbody>
-                  {dictionary.map((word, index) => (
+                  {dictionary && dictionary.map((word, index) => (
                     <tr key={index} className='text-center'>
                       <td className='py-2 px-4 border-b'>{index}</td>
                       <td className='py-2 px-4 border-b'>'{word}'</td>

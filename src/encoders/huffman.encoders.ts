@@ -103,7 +103,8 @@ export function huffmanDecode(encoded: string, codes: Record<string, string>): s
  * @param freq The record of characters againsts there frequencies
  * @returns A compact string representation.
  */
-export function compactCodes(freq: Record<string, number>): string {
+export function compactCodes(freq?: Record<string, number>): string {
+  if (!freq) return '';
   const ordered_freq = orderByFrequency(freq);
   const freq_wise_char_str: Record<number, number[]> = {};
   for (const [char, freq] of ordered_freq) {
@@ -114,7 +115,7 @@ export function compactCodes(freq: Record<string, number>): string {
     }
   }
   return Object.entries(freq_wise_char_str)
-    .map((value, key) => {
+    .map((value) => {
       return `${value[0]}:${value[1].join(US)}`;
     })
     .join(US);
