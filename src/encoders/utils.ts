@@ -1,4 +1,4 @@
-export const US = String.fromCharCode(31); 
+export const US = String.fromCharCode(31);
 export const BINARY_SEPARATOR = '1111111111111110';
 
 
@@ -52,4 +52,7 @@ export function binaryToAscii(binaryString: string): string {
 export function rgbToHex(r: number, g: number, b: number): string {
   return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
 }
+
+export const pattern = (len1: number, len0: number, repeats: number) =>
+  Array.from({ length: repeats }, () => "1".repeat(len1) + "0".repeat(len0)).join("");
 

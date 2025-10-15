@@ -1,6 +1,6 @@
 import { colorEncoder } from '../color.encoders';
 import { compactCodes, huffmanEncode } from '../huffman.encoders';
-import { asciiToBinary, BINARY_SEPARATOR, rgbToHex } from '../utils';
+import { asciiToBinary, BINARY_SEPARATOR, pattern, rgbToHex } from '../utils';
 import version from '../../versions.json';
 
 
@@ -52,8 +52,8 @@ const calculateMarkers = (gridSize: number) => [
     color: (_x: number, _y: number) => rgbToHex(0, 0, 0),
   },
 ];
-
 const versionInfo = version["1"];
+const endBit = pattern(versionInfo.bitSize, versionInfo.bitSize, 2);
 
 export function encode(gridSize: number, data: string): string[][] {
   // huffman encoding
@@ -64,7 +64,8 @@ export function encode(gridSize: number, data: string): string[][] {
   const versionBinary = asciiToBinary('1');
 
   const huffman_final_str =
-    versionBinary + gridSizeBinary + binary_huffman_header + BINARY_SEPARATOR + huffman_encoded;
+    versionBinary + gridSizeBinary + binary_huffman_header + BINARY_SEPARATOR + huffman_encoded + "111111";
+  console.log(huffman_final_str.length / 2 , gridSize * gridSize)
 
   return ArrayToGrid(colorEncoder(huffman_final_str, versionInfo.bitSize), gridSize);
 }
