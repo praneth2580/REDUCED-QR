@@ -7,6 +7,8 @@ import HuffmanDictionaryDemoUI from './demos/huffman_dict_group.ui';
 import AllInOneDemoUI from './demos/allinone.ui';
 import BitFileSaver from './pages/bit_file_saver.ui';
 import BitFileLoader from './pages/bit_file_loader.ui';
+import QrDecoder from './pages/qr_decoder.ui';
+import QRExtractor from './demos/qr_extractor.ui';
 
 export const routesConfig = [
   {
@@ -78,6 +80,25 @@ export const routesConfig = [
         path: 'bit-file-loader',
         element: <BitFileLoader />,
         name: 'File to Text',
+        inNav: true,
+      },
+    ],
+  },
+  {
+    path: '/qr',
+    name: 'QR',
+    inNav: true,
+    children: [
+      {
+        path: 'qr-decoder',
+        element: <QrDecoder/>,
+        name: 'Image to Text',
+        inNav: true,
+      },
+      {
+        path: 'qr-extractor',
+        element: <QRExtractor/>,
+        name: 'Qr Extractor',
         inNav: true,
       },
     ],

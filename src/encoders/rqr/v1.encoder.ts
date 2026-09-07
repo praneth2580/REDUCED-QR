@@ -1,116 +1,93 @@
 import { colorEncoder } from '../color.encoders';
 import { compactCodes, huffmanEncode } from '../huffman.encoders';
-import { asciiToBinary, BINARY_SEPARATOR, pattern, rgbToHex } from '../utils';
-import version from '../../versions.json';
+import { asciiToBinary, padBits, rgbToHex, uintToBits } from '../utils';
+import { countDataCells, getCalibrationMarkerColor, isBorder, isDataCell, v1Info } from './geometry';
+import { GRID_SIZE_BITS, HEADER_LENGTH_BITS, PAYLOAD_LENGTH_BITS, V1_VERSION, VERSION_BITS } from './v1.format';
 
+export { countDataCells, isDataCell };
 
-export const calibrationSize = 12 * 4;
+export class RqrCapacityError extends Error {
+  cellsNeeded: number;
+  maxCells: number;
 
-const calculateMarkers = (gridSize: number) => [
-  {
-    name: 'top-left',
-    coords: [
-      [0, 0],
-      [0, 1],
-      [1, 0],
-      [0, 2],
-      [2, 0],
-    ],
-    color: (x: number, y: number) => rgbToHex(x + y === 2 ? 127 : 225, 0, 0),
-  },
-  {
-    name: 'bottom-left',
-    coords: [
-      [gridSize - 1, 0],
-      [gridSize - 1, 1],
-      [gridSize - 2, 0],
-      [gridSize - 3, 0],
-      [gridSize - 1, 2],
-    ],
-    color: (x: number, y: number) => rgbToHex(0, y === 2 || x === gridSize - 3 ? 127 : 225, 0),
-  },
-  {
-    name: 'top-right',
-    coords: [
-      [0, gridSize - 1],
-      [0, gridSize - 2],
-      [1, gridSize - 1],
-      [0, gridSize - 3],
-      [2, gridSize - 1],
-    ],
-    color: (x: number, y: number) => rgbToHex(0, 0, x === 2 || y === gridSize - 3 ? 127 : 225),
-  },
-  {
-    name: 'bottom-right',
-    coords: [
-      [gridSize - 1, gridSize - 1],
-      [gridSize - 1, gridSize - 2],
-      [gridSize - 2, gridSize - 1],
-      [gridSize - 3, gridSize - 1],
-      [gridSize - 1, gridSize - 3],
-    ],
-    color: (_x: number, _y: number) => rgbToHex(0, 0, 0),
-  },
-];
-const versionInfo = version["1"];
-const endBit = pattern(versionInfo.bitSize, versionInfo.bitSize, 2);
-
-export function encode(gridSize: number, data: string): string[][] {
-  // huffman encoding
-  const { encoded: huffman_encoded, freq: huffman_freq } = huffmanEncode(data);
-  const huffman_header = compactCodes(huffman_freq);
-  const binary_huffman_header = asciiToBinary(huffman_header);
-  const gridSizeBinary = asciiToBinary(gridSize.toString());
-  const versionBinary = asciiToBinary('1');
-
-  const huffman_final_str =
-    versionBinary + gridSizeBinary + binary_huffman_header + BINARY_SEPARATOR + huffman_encoded + "111111";
-  console.log(huffman_final_str.length / 2 , gridSize * gridSize)
-
-  return ArrayToGrid(colorEncoder(huffman_final_str, versionInfo.bitSize), gridSize);
+  constructor(cellsNeeded: number, maxCells: number) {
+    const largest = v1Info.gridSize[v1Info.gridSize.length - 1];
+    super(
+      `Data is too large to fit in the largest RQR grid (${largest}×${largest}). Needs ${cellsNeeded} cells, ${maxCells} available.`
+    );
+    this.name = 'RqrCapacityError';
+    this.cellsNeeded = cellsNeeded;
+    this.maxCells = maxCells;
+  }
 }
 
-function isBorder(x: number, y: number, gridSize: number, borderSize = 1): boolean {
-  const markers = calculateMarkers(gridSize);
+export type RqrEncodeResult = {
+  grid: string[][];
+  gridSize: number;
+  bitLength: number;
+  cellsUsed: number;
+  cellsAvailable: number;
+  backupCells: number;
+  backupCopies: number;
+  backupLevel: number;
+};
 
-  // Collect all marker coordinates
-  const allMarkerCoords = markers.flatMap((marker) => marker.coords);
+function buildBitstream(data: string, gridSize: number): string {
+  const { encoded: payload, freq } = huffmanEncode(data);
+  const header = compactCodes(freq);
 
-  // Check if this (x, y) lies near any marker coordinate
-  return allMarkerCoords.some(([mx, my]) => {
-    const dx = Math.abs(mx - x);
-    const dy = Math.abs(my - y);
-    const withinBorder = dx <= borderSize && dy <= borderSize;
-    const isMarker = dx === 0 && dy === 0;
-    return withinBorder && !isMarker; // near a marker but not part of one
-  });
+  if (header.length >= 2 ** HEADER_LENGTH_BITS) {
+    throw new Error('Huffman header is too large to encode.');
+  }
+  if (payload.length >= 2 ** PAYLOAD_LENGTH_BITS) {
+    throw new Error('Huffman payload is too large to encode.');
+  }
+
+  return (
+    uintToBits(V1_VERSION, VERSION_BITS) +
+    uintToBits(gridSize, GRID_SIZE_BITS) +
+    uintToBits(header.length, HEADER_LENGTH_BITS) +
+    asciiToBinary(header) +
+    uintToBits(payload.length, PAYLOAD_LENGTH_BITS) +
+    payload
+  );
 }
 
-function getCalibrationMarkerColor(x: number, y: number, gridSize: number): string | null {
-  const markers = calculateMarkers(gridSize);
+function tileBits(bits: string, totalLength: number): string {
+  if (totalLength < bits.length) {
+    throw new Error('Backup fill is shorter than the primary bitstream.');
+  }
+  if (bits.length === 0) {
+    return '0'.repeat(totalLength);
+  }
+  const repeats = Math.ceil(totalLength / bits.length);
+  return bits.repeat(repeats).slice(0, totalLength);
+}
 
-  for (const marker of markers) {
-    for (const [mx, my] of marker.coords) {
-      if (x === mx && y === my) {
-        return marker.color(x, y);
-      }
+function pickGridSize(cellsNeeded: number): { gridSize: number; cellsAvailable: number } {
+  for (const gridSize of v1Info.gridSize) {
+    const cellsAvailable = countDataCells(gridSize);
+    if (cellsAvailable >= cellsNeeded) {
+      return { gridSize, cellsAvailable };
     }
   }
 
-  return null; // not a marker
+  const largest = v1Info.gridSize[v1Info.gridSize.length - 1];
+  throw new RqrCapacityError(cellsNeeded, countDataCells(largest));
 }
 
 function ArrayToGrid(data: string[], gridSize: number): string[][] {
   const grid: string[][] = [];
   let current_data_index = 0;
+
   for (let x = 0; x < gridSize; x++) {
-    grid[x] = []; // ✅ initialize row first
+    grid[x] = [];
     for (let y = 0; y < gridSize; y++) {
       let colorCode = getCalibrationMarkerColor(x, y, gridSize);
 
       if (!colorCode && isBorder(x, y, gridSize, 1)) colorCode = rgbToHex(255, 255, 255);
 
-      if (!colorCode && data[current_data_index]) {
+      if (!colorCode && current_data_index < data.length) {
         colorCode = data[current_data_index];
         current_data_index++;
       }
@@ -120,5 +97,38 @@ function ArrayToGrid(data: string[], gridSize: number): string[][] {
       grid[x][y] = colorCode;
     }
   }
+
+  if (current_data_index !== data.length) {
+    throw new Error(`Failed to place all data cells (${current_data_index}/${data.length}).`);
+  }
+
   return grid;
+}
+
+export function encode(data: string): RqrEncodeResult {
+  if (!data) {
+    throw new Error('Cannot encode empty data.');
+  }
+
+  const unpaddedBits = buildBitstream(data, 0);
+  const bits = padBits(unpaddedBits, v1Info.bitSize);
+  const cellsNeeded = bits.length / v1Info.bitSize;
+  const { gridSize, cellsAvailable } = pickGridSize(cellsNeeded);
+
+  const primaryBits = padBits(buildBitstream(data, gridSize), v1Info.bitSize);
+  const primaryCells = primaryBits.length / v1Info.bitSize;
+  const filledBits = tileBits(primaryBits, cellsAvailable * v1Info.bitSize);
+  const colors = colorEncoder(filledBits, v1Info.bitSize);
+  const grid = ArrayToGrid(colors, gridSize);
+
+  return {
+    grid,
+    gridSize,
+    bitLength: primaryBits.length,
+    cellsUsed: primaryCells,
+    cellsAvailable,
+    backupCells: cellsAvailable - primaryCells,
+    backupCopies: Math.floor(cellsAvailable / primaryCells) - 1,
+    backupLevel: cellsAvailable / primaryCells,
+  };
 }

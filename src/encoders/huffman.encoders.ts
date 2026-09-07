@@ -60,7 +60,8 @@ export function generateCodes(
   map: Record<string, string> = {}
 ): Record<string, string> {
   if (node.char !== null) {
-    map[node.char] = prefix;
+    // A single-symbol tree would otherwise get an empty code and drop all payload bits.
+    map[node.char] = prefix || '0';
   } else {
     if (node.left) generateCodes(node.left, prefix + '0', map);
     if (node.right) generateCodes(node.right, prefix + '1', map);

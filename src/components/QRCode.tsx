@@ -1,7 +1,6 @@
-import { useEffect, useRef } from 'react';
-import versions from '../versions.json';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { Button } from './Button';
-import { calibrationSize, encode } from '../encoders/rqr/v1.encoder';
+import { encode } from '../encoders/rqr/v1.encoder';
 
 interface QrCodeProps {
   data: string;
@@ -10,16 +9,8 @@ interface QrCodeProps {
   height: number | undefined;
 }
 
-const gridSizes: any = {
-  1: versions['1'].gridSize,
-};
-
-const versionWiseEncoders: any = {
+const versionWiseEncoders: Record<number, typeof encode> = {
   1: encode,
-};
-
-const versionWiseCalibrationSize: any = {
-  1: calibrationSize,
 };
 
 export function QrCode({
@@ -28,72 +19,89 @@ export function QrCode({
   width = 100,
   height = 100,
 }: QrCodeProps) {
-  if (!data || data === '' || !version || !width || !height) {
-    console.error('Invalid props');
-    return <></>;
-  }
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  const gridSizesThatFitDat = gridSizes[version].filter(
-    (value: number) => value * value > data.length + versionWiseCalibrationSize[version]
-  );
+  const result = useMemo(() => {
+    if (!data || !version || !width || !height) {
+      return { kind: 'empty' as const };
+    }
 
-  if (gridSizesThatFitDat.length === 0) {
-    console.error('Data size is to large');
-    return <></>;
-  }
+    const encoder = versionWiseEncoders[version];
+    if (!encoder) {
+      return { kind: 'error' as const, message: `Unsupported RQR version ${version}.` };
+    }
 
-  const grid = gridSizesThatFitDat[0];
-
-  const colorEncodedGrid = versionWiseEncoders[version](grid, data);
-
-  let canvasRef = useRef<HTMLCanvasElement>(null);
-
-  const drawQrCode = (ctx: CanvasRenderingContext2D) => {
     try {
-      ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+      return { kind: 'ok' as const, ...encoder(data) };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to generate RQR code.';
+      return { kind: 'error' as const, message };
+    }
+  }, [data, version, width, height]);
 
-      const cellSize = Math.min(width, height) / grid;
+  const drawQrCode = useCallback(
+    (canvas: HTMLCanvasElement) => {
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
 
-      for (let r = 0; r < grid; r++) {
-        for (let c = 0; c < grid; c++) {
-          // const colorIndex = r * grid + c;
-          // if (colorIndex < data.length) {
-          //   ctx.fillStyle = data[colorIndex].toString();
-          //   ctx.fillRect(c * cellSize, r * cellSize, cellSize, cellSize);
-          // }
-          const color = colorEncodedGrid[r][c];
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      if (result.kind !== 'ok') return;
+
+      const { grid, gridSize } = result;
+      const cellSize = Math.min(width, height) / gridSize;
+
+      for (let r = 0; r < gridSize; r++) {
+        for (let c = 0; c < gridSize; c++) {
+          const color = grid[r][c];
           if (color) {
-            ctx.fillStyle = color.toString();
+            ctx.fillStyle = color;
             ctx.fillRect(c * cellSize, r * cellSize, cellSize, cellSize);
           }
         }
       }
-    } catch (error) {
-      alert(error);
-    }
+    },
+    [result, width, height]
+  );
+
+  const setCanvasRef = (canvas: HTMLCanvasElement | null) => {
+    canvasRef.current = canvas;
+    if (canvas) drawQrCode(canvas);
   };
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+    drawQrCode(canvas);
+  }, [drawQrCode]);
 
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+  if (result.kind === 'empty') {
+    return (
+      <div className='flex items-center justify-center min-h-[200px] text-gray-400 text-center'>
+        Enter text and click Generate
+      </div>
+    );
+  }
 
-    drawQrCode(ctx);
-  }, [canvasRef]);
+  if (result.kind === 'error') {
+    return (
+      <div className='flex items-center justify-center min-h-[200px] text-red-600 text-center px-4'>
+        {result.message}
+      </div>
+    );
+  }
 
   return (
     <div className='flex flex-col items-center justify-center'>
-      
-      <canvas ref={canvasRef} width={width} height={height} />
+      <canvas ref={setCanvasRef} width={width} height={height} />
       <div className='flex gap-2 justify-center items-center mt-4 text-gray-700'>
+        <p className='w-fit'>v{version}</p>
         <p className='w-fit'>
-          v{version}
+          {result.gridSize}x{result.gridSize}
         </p>
         <p className='w-fit'>
-          {grid}x{grid}
+          {result.cellsUsed}/{result.cellsAvailable} cells
         </p>
+        <p className='w-fit'>backup {result.backupLevel.toFixed(2)}×</p>
       </div>
       <div className='flex gap-2 justify-center items-center mt-4'>
         <Button
@@ -109,7 +117,6 @@ export function QrCode({
               document.body.removeChild(link);
             }
           }}
-          
           text='Download'
         />
         <Button
@@ -126,7 +133,6 @@ export function QrCode({
                         title: 'RQR Code',
                         text: 'Check out this RQR Code!',
                       });
-                      console.log('Shared successfully');
                     } catch (error) {
                       console.error('Error sharing:', error);
                     }
@@ -136,7 +142,9 @@ export function QrCode({
                 }
               }, 'image/png');
             }
-          }} text='Share' />
+          }}
+          text='Share'
+        />
       </div>
     </div>
   );

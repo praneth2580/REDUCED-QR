@@ -2,11 +2,16 @@ import { useState } from 'react';
 import { QrCode } from './components/QRCode';
 
 function Home() {
-  const [input, setInput] = useState<string>("");
-  const [key, setKey] = useState<number>(0);
+  const [input, setInput] = useState<string>('');
+  const [generated, setGenerated] = useState<string>('');
+
+  const handleGenerate = () => {
+    setGenerated(input);
+  };
 
   const handleClear = () => {
     setInput('');
+    setGenerated('');
   };
 
   return (
@@ -17,7 +22,6 @@ function Home() {
         </h1>
 
         <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-          {/* Input Section */}
           <div className='flex flex-col'>
             <h2 className='text-xl font-semibold text-gray-700 mb-2'>Input</h2>
             <textarea
@@ -28,7 +32,7 @@ function Home() {
             />
             <div className='flex mt-4'>
               <button
-                onClick={() => setKey(prev => prev + 1)}
+                onClick={handleGenerate}
                 disabled={!input}
                 className='bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors'
               >
@@ -43,8 +47,7 @@ function Home() {
             </div>
           </div>
 
-          {/* Output Section */}
-          <QrCode data={input} key={key} version={1} width={500} height={500}/>
+          <QrCode data={generated} version={1} width={500} height={500} />
         </div>
       </div>
     </div>
