@@ -79,7 +79,11 @@ export function huffmanEncode(text: string): Encoded {
   return { encoded, codes, tree, freq };
 }
 
-export function huffmanDecode(encoded: string, codes: Record<string, string>): string {
+export function huffmanDecode(
+  encoded: string,
+  codes: Record<string, string>,
+  options?: { strict?: boolean }
+): string {
   const reverseMap: Record<string, string> = {};
   for (const [char, code] of Object.entries(codes)) {
     reverseMap[code] = char;
@@ -88,13 +92,23 @@ export function huffmanDecode(encoded: string, codes: Record<string, string>): s
   let current = '';
   let decoded = '';
 
-  for (let bit of encoded) {
+  for (const bit of encoded) {
     current += bit;
     if (reverseMap[current]) {
       decoded += reverseMap[current];
       current = '';
     }
   }
+
+  if (options?.strict) {
+    if (!decoded) {
+      throw new Error('Huffman payload decoded to empty text.');
+    }
+    if (current.length > 0) {
+      throw new Error('Huffman payload did not end on a code boundary.');
+    }
+  }
+
   return decoded;
 }
 

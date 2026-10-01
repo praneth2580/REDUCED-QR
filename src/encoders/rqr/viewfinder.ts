@@ -60,8 +60,8 @@ export function cropViewfinder(
   video: HTMLVideoElement,
   overlay: HTMLElement,
   canvas: HTMLCanvasElement,
-  outSize = 512
-): ImageData {
+  outSize = 640
+): { image: ImageData; source: SourceRect } {
   if (video.readyState < 2 || video.videoWidth === 0) {
     throw new Error('Video is not ready.');
   }
@@ -73,12 +73,19 @@ export function cropViewfinder(
     video.videoHeight
   );
 
+  const side = Math.min(sw, sh);
+  const squareSx = sx + (sw - side) / 2;
+  const squareSy = sy + (sh - side) / 2;
+
   canvas.width = outSize;
   canvas.height = outSize;
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
   if (!ctx) {
     throw new Error('Canvas 2D context not supported');
   }
-  ctx.drawImage(video, sx, sy, sw, sh, 0, 0, outSize, outSize);
-  return ctx.getImageData(0, 0, outSize, outSize);
+  ctx.drawImage(video, squareSx, squareSy, side, side, 0, 0, outSize, outSize);
+  return {
+    image: ctx.getImageData(0, 0, outSize, outSize),
+    source: { sx: squareSx, sy: squareSy, sw: side, sh: side },
+  };
 }
