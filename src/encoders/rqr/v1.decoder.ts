@@ -280,6 +280,14 @@ export function decodeFromImageData(image: PixelBuffer): RqrDecodeResult {
   return decodeFromGrid(sampleImageToGrid(image, gridSize));
 }
 
+export function tryDecodeFromImageData(image: PixelBuffer): RqrDecodeResult | null {
+  try {
+    return decodeFromImageData(image);
+  } catch {
+    return null;
+  }
+}
+
 function loadImage(source: Blob | string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const image = new Image();

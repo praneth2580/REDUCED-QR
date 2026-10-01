@@ -8,6 +8,7 @@ import AllInOneDemoUI from './demos/allinone.ui';
 import BitFileSaver from './pages/bit_file_saver.ui';
 import BitFileLoader from './pages/bit_file_loader.ui';
 import QrDecoder from './pages/qr_decoder.ui';
+import QrLiveScanner from './pages/qr_live_scanner.ui';
 import QRExtractor from './demos/qr_extractor.ui';
 
 export const routesConfig = [
@@ -93,6 +94,12 @@ export const routesConfig = [
         path: 'qr-decoder',
         element: <QrDecoder/>,
         name: 'Image to Text',
+        inNav: true,
+      },
+      {
+        path: 'live-scan',
+        element: <QrLiveScanner />,
+        name: 'Live Scan',
         inNav: true,
       },
       {
